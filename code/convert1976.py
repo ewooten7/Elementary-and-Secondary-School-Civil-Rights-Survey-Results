@@ -1,0 +1,4660 @@
+import csv
+from pathlib import Path
+
+# --- Schema Definitions ---
+# These schemas define the fields we want to extract from the data block that
+# immediately follows a record marker.
+
+SYSTEM_SCHEMA = [
+    ("SELECTION CODE - l-CO,2-VP,3-LIT,'4-HIGH INTEREST/ESAA,5=DRAWN,6=NOT SAMPLED", 4, "numeric"),
+    ("System Name", 32, "literal"),
+    ("County name", 16, "literal"),
+    ("City name", 16, "literal"),
+      (
+    "ZIP CODE",
+    8,
+    "numeric"
+  ),
+  (
+    "NUMBER OF SCHOOLS IN SCHOOL SYSTEM",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM INVOLVED IN CONSOLIDATION (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM INVOLVED IN UNIFICATION (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM INVOLVED IN DIVISION (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM INVOLVED IN ANNEXATION (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM NOT INVOLVED IN ANY ABOVE CHANGES (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM UNDER COURT ORDER TO DESEGREGATE (1=YES,2=NO)",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADUATION REQUIREMENTS DIFFERENT FOR MALES AND FEMALES (1=YES,2=NO)",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "NUMBER OF SCHOOLS WITH 5 OR MORE VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+    (
+    "AMER/AK IND MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "RESIDENT SCHOOL-AGE CHILDREN IDENTIFIED AS REQUIRING SPECIAL EDUCATION",
+    4,
+    "numeric"
+  ),
+  (
+    "RESIDENT PUPILS IN SPECIAL EDUCATION PROGRAM OPERATED WITH OTHER SCHOOL SYSTEMS",
+    4,
+    "numeric"
+  ),
+  (
+    "RES. PUPILS IN SPEC. ED. PROGRAM OPERATED EXCLUSIVELY BY ANOTHER PUBLIC SCHOOL SYSTEM",
+    4,
+    "numeric"
+  ),
+  (
+    "RES. PUPILS IN SPEC. ED. PROGRAM OPERATED BY ENTITY OTHER THAN PUBLIC SCHOOL SYSTEM",
+    4,
+    "numeric"
+  ),
+  (
+    "NON-RESIDENT PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "RESIDENT SCHOOL-AGE CHILDREN OUT OF SCHOOL BECAUSE OF HANDICAPPING CONDITION",
+    4,
+    "numeric"
+  ),
+  (
+    "RES. SCH.-AGE CHILDREN OUT OF SCH. WITH HANDICAPPING COND. GETTING HOMEBOUND INSTRUC.",
+    4,
+    "numeric"
+  ),
+  (
+    "RES. SCH.-AGE CHILDREN EVALUATED TO DETERMINE THEIR NEED FOR SPECIAL EDUCATION",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "OTHER REPORTING DATES (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "NOT USED (120)",
+    4,
+    "skip"
+  ),
+  (
+    "NOT USED (121)",
+    4,
+    "skip"
+  ),
+  (
+    "IS THIS AN ESAA DISTRICT ? 1=YES,2=NO",
+    4,
+    "numeric"
+  ),
+  (
+    "SAMPLING WEIGHTH",
+    4,
+    "numeric"
+  ),
+  (
+    "NOT USED (124-829)",
+    2824,
+    "skip"
+  ),
+  (
+    "ERROR BIT ARRAY",
+    172,
+    "numeric"
+  )
+]
+
+SCHOOL_SCHEMA = [
+    ("SELECTION CODE - l-CO,2-VP,3-LIT,'4-HIGH INTEREST/ESAA,5=DRAWN,6=NOT SAMPLED", 4, "numeric"),
+    ("System Name", 32, "literal"),
+    ("County name", 16, "literal"),
+        ("City name", 16, "literal"),
+      (
+    "ZIP CODE",
+    8,
+    "numeric"
+  ),
+      (
+    "NUMBER OF SCHOOLS IN SCHOOL SYSTEM",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM INVOLVED IN CONSOLIDATION (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM INVOLVED IN UNIFICATION (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM INVOLVED IN DIVISION (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM INVOLVED IN ANNEXATION (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM NOT INVOLVED IN ANY ABOVE CHANGES (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL SYSTEM UNDER COURT ORDER TO DESEGREGATE (1=YES,2=NO)",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADUATION REQUIREMENTS DIFFERENT FOR MALES AND FEMALES (1=YES,2=NO)",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS ENROLLED IN VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "NUMBER OF SCHOOLS WITH 5 OR MORE VOCATIONAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+    (
+    "AMER/AK IND MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS SUSPENDED FOR AT LEAST ONE DAY",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS (PRIM.LANGUAGE OTHER THAN ENG.) IN PROGRAMS CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR EDUCABLE MENTALLY RETARDED/HANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPECIAL EDUCATION PROGRAMS FOR GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN HONORS/ADV. PLACE./ENRICHMENT PROGRAMS, IF NO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "RESIDENT SCHOOL-AGE CHILDREN IDENTIFIED AS REQUIRING SPECIAL EDUCATION",
+    4,
+    "numeric"
+  ),
+  (
+    "RESIDENT PUPILS IN SPECIAL EDUCATION PROGRAM OPERATED WITH OTHER SCHOOL SYSTEMS",
+    4,
+    "numeric"
+  ),
+  (
+    "RES. PUPILS IN SPEC. ED. PROGRAM OPERATED EXCLUSIVELY BY ANOTHER PUBLIC SCHOOL SYSTEM",
+    4,
+    "numeric"
+  ),
+  (
+    "RES. PUPILS IN SPEC. ED. PROGRAM OPERATED BY ENTITY OTHER THAN PUBLIC SCHOOL SYSTEM",
+    4,
+    "numeric"
+  ),
+  (
+    "NON-RESIDENT PUPILS IN SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "RESIDENT SCHOOL-AGE CHILDREN OUT OF SCHOOL BECAUSE OF HANDICAPPING CONDITION",
+    4,
+    "numeric"
+  ),
+  (
+    "RES. SCH.-AGE CHILDREN OUT OF SCH. WITH HANDICAPPING COND. GETTING HOMEBOUND INSTRUC.",
+    4,
+    "numeric"
+  ),
+  (
+    "RES. SCH.-AGE CHILDREN EVALUATED TO DETERMINE THEIR NEED FOR SPECIAL EDUCATION",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO SPECIAL EDUCATION PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "OTHER REPORTING DATES (0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+    (
+    "NOT USED (120)",
+    4,
+    "skip"
+  ),
+  (
+    "NOT USED (121)",
+    4,
+    "skip"
+  ),
+  (
+    "IS THIS AN ESAA DISTRICT ? 1=YES,2=NO",
+    4,
+    "numeric"
+  ),
+  (
+    "SAMPLING WEIGHTH",
+    4,
+    "numeric"
+  ),
+  (
+    "NOT USED (124-829)",
+    36,
+    "skip"
+  ),
+    (
+    "SCHOOL OE CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "ALWAYS ZERO",
+    4,
+    "numeric"
+  ),
+  (
+    "NAME OF SCHOOL",
+    32,
+    "literal"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - UNGRADED",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - PRE-K",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - K",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 1",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 2",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 3",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 4",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 5",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 6",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 7",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 8",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 9",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 10",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 11",
+    4,
+    "numeric"
+  ),
+  (
+    "GRADE OFFERED (0=NO,1=YES) - GRADE 12",
+    4,
+    "numeric"
+  ),
+  (
+    "FIRST GRADE LEVEL OFFERED OR YOUNGEST AGE OF PUPILS FOR UNGRADED SECTIONS",
+    4,
+    "numeric"
+  ),
+  (
+    "LAST GRADE LEVEL OFFERED OR OLDEST AGE OF PUPILS FOR UNGRADED SECTIONS",
+    4,
+    "numeric"
+  ),
+  (
+    "SCHOOL CAMPUS EXCLUSIVELY SPECIAL ED. PROGRAMS (1=YES,NO=2)",
+    4,
+    "numeric"
+  ),
+  (
+    "NUMBER OF VOCATIONAL EDUCATION PROGRAMS OPERATED AT SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "FACILITIES/EQUIP. FOR HANDICAPPED PERSONS(1=YES,2=NO) GROUND LEVEL/RAMPS WITH HANDRAIL",
+    4,
+    "numeric"
+  ),
+  (
+    "FACILITIES/EQUIP. FOR HANDICAPPED PERSONS(1=YES,2=NO) SINGLE STORY/ELEVATOR",
+    4,
+    "numeric"
+  ),
+  (
+    "FACILITIES/EQUIP. FOR HANDICAPPED PERSONS(1=YES,2=NO) TOILET STALLS",
+    4,
+    "numeric"
+  ),
+  (
+    "FACILITIES/EQUIP. FOR HANDICAPPED PERSONS(1=YES,2=NO) DOORS OPEN TO AT LEAST 32 INCH.",
+    4,
+    "numeric"
+  ),
+  (
+    "FACILITIES/EQUIP. FOR HANDICAPPED PERSONS(1=YES,2=NO) SIMULTANEOUS WARNING SIGNALS",
+    4,
+    "numeric"
+  ),
+  (
+    "BUILDINGS/FACILITIES CONSTRUCTED/ALTERED USING FED. ASSIST. (1=YES,2=NO)",
+    4,
+    "numeric"
+  ),
+    (
+    "HANDICAPPED PUPILS WHO NEED SPECIAL ACCOMMODATIONS",
+    4,
+    "numeric"
+  ),
+  (
+    "PHYSICALLY/MENTALLY HANDICAPPED PUPILS REQUIRING TRANSPORTATION TO SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "HANDICAPPED PUPILS RECEIVING TRANSPORTATION WHICH IS PUBLICALLY SUBSIDIZED",
+    4,
+    "numeric"
+  ),
+  (
+    "TRANSPORTATION ACCOMMODATES PERSONS CONFINED TO WHEELCHAIR (1=YES,2=NO)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPILS, TRANSPORTED AT PUBLIC EXPENSE",
+    4,
+    "numeric"
+  ),
+  (
+    "MALE PUPILS IN GRADES 6-9 ENROLLED IN HOME ECONOMICS COURSE",
+    4,
+    "numeric"
+  ),
+  (
+    "FEMALE PUPILS IN GRADES 6-9 ENROLLED IN HOME ECONOMICS COURSE",
+    4,
+    "numeric"
+  ),
+  (
+    "MALE PUPILS IN GRADES 6-9 ENROLLED IN INDUSTRIAL ARTS COURSE",
+    4,
+    "numeric"
+  ),
+  (
+    "FEMALE PUPILS IN GRADES 6-9 ENROLLED IN INDUSTRIAL ARTS COURSE",
+    4,
+    "numeric"
+  ),
+  (
+    "MALE PUPILS GRADES 6-9 ENROLLED IN HOME ECON./IND. ARTS COURSE FOR PUPILS OF 1 SEX",
+    4,
+    "numeric"
+  ),
+  (
+    "FEMALE PUPILS GRADES 6-9 ENROLLED IN HOME ECON./IND. ARTS COURSE FOR PUPILS OF 1 SEX",
+    4,
+    "numeric"
+  ),
+  (
+    "MALE PUPILS GRADES 7-12 ENROLLED IN HIGHEST LEVEL MATHEMATICS COURSE",
+    4,
+    "numeric"
+  ),
+  (
+    "FEMALE PUPILS GRADES 7-12 ENROLLED IN HIGHEST LEVEL MATHEMATICS COURSE",
+    4,
+    "numeric"
+  ),
+  (
+    "MALE PUPILS GRADES 7-12 ENROLLED IN HIGHEST-LEVEL NATURAL SCIENCE COURSE",
+    4,
+    "numeric"
+  ),
+  (
+    "FEMALE PUPILS GRADES 7-12 ENROLLED IN HIGHEST LEVEL NATURAL SCIENCE COURSE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN MEMBERSHIP",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS THAT DROPPED OUT/DISCONTINUED SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+   (
+    "SCHOOL DOES NOT AWARD HIGH SCHOOL DIPLOMA/EQUIVALENT(0=NO,1=YES)",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS RECEIVING HIGH SCHOOL DIPLOMA/EQUIVALENT",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS WHOSE PRIMARY LANGUAGE IS OTHER THAN ENGLISH",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS(PRIM. LANG.OTHER THAN ENG.)IN CLASSES CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS(PRIM. LANG.OTHER THAN ENG.)IN CLASSES CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS(PRIM. LANG.OTHER THAN ENG.)IN CLASSES CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS(PRIM. LANG.OTHER THAN ENG.)IN CLASSES CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS(PRIM. LANG.OTHER THAN ENG.)IN CLASSES CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS(PRIM. LANG.OTHER THAN ENG.)IN CLASSES CONDUCTED IN LANG.OTHER THAN ENG.",
+    4,
+    "numeric"
+  ),
+  (
+    "ANY STUDENTS SUSPENDED/EXPELLED (1=YES,2=NO)",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+    (
+    "WHITE NOT HISP TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS SUSPENDED ONCE AND ONLY ONCE 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS SUSPENDED MORE THAN ONCE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 1-3 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 4-10 CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL FOR PUPILS SUSP. MORE THAN ONCE,NUMBER OF SUSPENSIONS 11 OR MORE CONSECUTIVE DAYS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+    (
+    "HISPANIC FEMALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS EXPELLED",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS RECEIVING CORPORAL PUNISH. FROM PRINCIPAL/DESIGNEE AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS REFERRED FOR DISCIPLINARY ACTION TO COURT/JUVENILE AUTHOR.",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+    (
+    "BLACK NOT HISP TOTAL PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS REFERRED TO ALTERNATIVE EDUCATION PROG. AS FORMAL DISCIPLINE",
+    4,
+    "numeric"
+  ),
+  (
+    "ANY SPECIAL EDUCATION PROGRAMS AT SCHOOL (1=YES,2=NO)",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED-LESS THAN 10 HRS. A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-EDUCABLE MENTALLY RETARDED - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED-LESS THAN 10 HRS. A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-TRAINABLE MENTALLY RETARDED - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.-LESS THAN 10 HRS. A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB.-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SERIOUSLY EMOTION.DISTURB. - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED-LESS THAN 10 HRS. A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SPECIFIC LEARNING DISABLED - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED",
+    4,
+    "numeric"
+  ),
+    (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED-LESS THAN 10 HRS.A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-SPEECH IMPAIRED - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.-LESS THAN 10 HRS.A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP.-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-ORTHOPEDICALLY HANDICAP. - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED-LESS THAN 10 HRS.A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-BLIND/VISUALLY IMPAIRED - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING-LESS THAN 10 HRS.A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-DEAF/HARD OF HEARING - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED-LESS THAN 10 HRS.A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-OTHER HEALTH IMPAIRED - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED",
+    4,
+    "numeric"
+  ),
+    (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED-LESS THAN 10 HRS.A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-MULTIHANDICAPPED-FULL TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES-LESS THAN 10 HRS.A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES-10 HRS. OR MORE WK., LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-TOTAL OF ABOVE LINES - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED-LESS THAN 10 HRS.A WEEK",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED-10 HRS. OR MORE WK.,LESS THAN FULL",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL TOTAL PUPILS IN SPEC. ED. PROG.-GIFTED/TALENTED - FULL-TIME",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO EDUCABLE MENTALLY RETARDED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO EDUCABLE MENTALLY RETARDED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO TRAINABLE MENTALLY RETARDED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO TRAINABLE MENTALLY RETARDED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO SERIOUSLY EMOTIONALLY DISTURBED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO SERIOUSLY EMOTIONALLY DISTURBED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO SPECIFIC LEARNING DISABLED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO SPECIFIC LEARNING DISABLED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO SPEECH IMPAIRED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO SPEECH IMPAIRED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO ORTHOPEDICALLY HANDICAPPED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO ORTHOPEDICALLY HANDICAPPED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO BLIND/VISUALLY IMPAIRED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO BLIND/VISUALLY IMPAIRED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO DEAF/HARD OF HEARING PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO DEAF/HARD OF HEARING PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO OTHER HEALTH IMPAIRED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO OTHER HEALTH IMPAIRED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO MULTIHANDICAPPED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO MULTIHANDICAPPED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "FULL-TIME TEACHERS ASSIGNED TO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "PART-TIME TEACHERS ASSIGNED TO GIFTED/TALENTED PROGRAMS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND TOTAL PUPILS IN HONORS/ADV. PLACEMENT/ENRICH. PROG. ,IF NO GIFTED/TALENTED SPEC.ED.PROG.",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS TOTAL PUPILS IN HONORS/ADV. PLACEMENT/ENRICH. PROG. ,IF NO GIFTED/TALENTED SPEC.ED.PROG.",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP TOTAL PUPILS IN HONORS/ADV. PLACEMENT/ENRICH. PROG. ,IF NO GIFTED/TALENTED SPEC.ED.PROG.",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP TOTAL PUPILS IN HONORS/ADV. PLACEMENT/ENRICH. PROG. ,IF NO GIFTED/TALENTED SPEC.ED.PROG.",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC TOTAL PUPILS IN HONORS/ADV. PLACEMENT/ENRICH. PROG. ,IF NO GIFTED/TALENTED SPEC.ED.PROG.",
+    4,
+    "numeric"
+  ),
+  (
+    "CHECK ON NUMBER OF FULL-TIME TEACHERS(1=18 OR LESS,2=19 OR MORE)",
+    4,
+    "numeric"
+  ),
+  (
+    "NUMBER OF FULL-TIME TEACHERS AT SCHOOL",
+    4,
+    "numeric"
+  ),
+  (
+    "SELECTION NUMBER ( FROM CHART )",
+    4,
+    "numeric"
+  ),
+    (
+    "PUPIL ASSIGNMENT 1 (CLASS FIRST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 1 (CLASS FIRST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 1 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 2 (CLASS FIRST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 2 (CLASS FIRST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 2 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 3 (CLASS FIRST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 3 (CLASS FIRST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 3 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+    (
+    "PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 7 (CLASS LAST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 7 (CLASS LAST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 7 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 8 (CLASS LAST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 8 (CLASS LAST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 8 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 9 (CLASS LAST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+    (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 9 (CLASS LAST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 9 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 10 (CLASS FIRST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 10 (CLASS FIRST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 10 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 11 (CLASS FIRST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 11 (CLASS FIRST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 11 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 12 (CLASS FIRST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 12 (CLASS FIRST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 12 (CLASS FIRST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 16 (CLASS LAST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 16 (CLASS LAST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 16 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 17 (CLASS LAST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 17 (CLASS LAST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+    (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 17 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 18 (CLASS LAST) - GRADE/AGE (BEGINNING OF SPAN)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 18 (CLASS LAST) - SUBJECT CODE",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND MALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS MALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP MALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP MALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC MALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL MALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "AMER/AK IND FEMALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ASIAN/PAC IS FEMALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "BLACK NOT HISP FEMALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "WHITE NOT HISP FEMALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "HISPANIC FEMALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "TOTAL FEMALE PUPIL ASSIGNMENT 18 (CLASS LAST) - NUMBER OF PUPILS",
+    4,
+    "numeric"
+  ),
+  (
+    "ALWAYS ZERO",
+    4,
+    "numeric"
+  ),
+  (
+    "ALWAYS ZERO",
+    4,
+    "numeric"
+  ),
+  (
+    "ALWAYS ZERO",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 1 (CLASS FIRST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 2 (CLASS FIRST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 3 (CLASS FIRST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 4 (CLASS MIDDLE) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 5 (CLASS MIDDLE) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 6 (CLASS MIDDLE) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 7 (CLASS LAST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 8 (CLASS LAST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 9 (CLASS LAST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 10 (CLASS FIRST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 11 (CLASS FIRST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 12 (CLASS FIRST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 13 (CLASS MIDDLE) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 14 (CLASS MIDDLE) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 15 (CLASS MIDDLE) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 16 (CLASS LAST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 17 (CLASS LAST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "PUPIL ASSIGNMENT 18 (CLASS LAST) - GRADE/AGE (END OF SPAN OR SINGLE ENTRY)",
+    4,
+    "numeric"
+  ),
+  (
+    "NOT USED",
+    20,
+    "skip"
+  ),
+  (
+    "ERROR BIT ARRAY",
+    172,
+    "numeric"
+  )
+]
+
+CLASSROOM_SCHEMA = [
+    ("SKIP_0", 4, "skip"),
+    ("Classroom Name", 32, "literal"),
+    ("SKIP_1", 4, "skip"),
+]
+
+
+# --- Define the fixed data block sizes that FOLLOW each marker ---
+# As per your new requirement, this is 3480 for the main records.
+SYSTEM_BLOCK_SIZE = 3480
+SCHOOL_BLOCK_SIZE = 3480
+# NOTE: The sum of fields in CLASSROOM_SCHEMA (8 + 32 + 4) is 44.
+# The original code had a size of 36, which was likely an error.
+# We are using 44 to match the schema definition.
+CLASSROOM_BLOCK_SIZE = 44
+
+
+def parse_record(byte_block, schema):
+    """
+    Parses the beginning of a byte block according to a schema.
+    It will stop parsing when the schema is exhausted, ignoring any remaining bytes.
+    """
+    record = {}
+    pos = 0
+    for field_name, size, field_type in schema:
+        if pos + size > len(byte_block):
+            print(f"⚠️ Warning: Incomplete data block. Expected at least {pos + size} bytes, but got {len(byte_block)}. Stopping parse for this record.")
+            break
+        chunk = byte_block[pos : pos + size]
+        if field_type == "literal":
+            record[field_name] = chunk.decode("cp037", errors="replace").strip()
+        elif field_type == "numeric":
+            record[field_name] = int.from_bytes(chunk, "big")
+        pos += size
+    return record
+
+
+def process_file(filepath, out_systems_csv="systems.csv", out_schools_csv="schools.csv", out_classrooms_csv="classrooms.csv"):
+    """
+    Parses a binary file by searching for specific record markers and
+    processes the fixed-size data blocks that follow each marker.
+    This version assumes the marker can appear anywhere, and the 4 bytes
+    preceding it are not part of the data block.
+    """
+    try:
+        data = Path(filepath).read_bytes()
+    except FileNotFoundError:
+        print(f"❌ Error: File not found at '{filepath}'")
+        return
+
+    SYSTEM_MARKER = b'\x00\x00\x00\x01'
+    SCHOOL_MARKER = b'\x00\x00\x00\x02'
+    CLASSROOM_MARKER = b'\x00\x00\x00\x03'
+    MARKER_SIZE = 4
+
+    systems_data = []
+    schools_data = []
+    classrooms_data = []
+    
+    system_key_counter = 0
+    current_system_key = None
+
+    pos = 0
+    while pos < len(data):
+        # Find the next occurrence of any of the markers from the current position
+        pos_sys = data.find(SYSTEM_MARKER, pos)
+        pos_sch = data.find(SCHOOL_MARKER, pos)
+        pos_cls = data.find(CLASSROOM_MARKER, pos)
+
+        # Create a list of all valid positions found
+        positions = [p for p in [pos_sys, pos_sch, pos_cls] if p != -1]
+        
+        # If no markers are left in the file, we're done
+        if not positions:
+            break
+        
+        # Find out which marker comes first
+        next_marker_pos = min(positions)
+        
+        # Determine which marker we found
+        if next_marker_pos == pos_sys:
+            marker = SYSTEM_MARKER
+            block_size = SYSTEM_BLOCK_SIZE
+            schema = SYSTEM_SCHEMA
+            record_type = "System"
+        elif next_marker_pos == pos_sch:
+            marker = SCHOOL_MARKER
+            block_size = SCHOOL_BLOCK_SIZE
+            schema = SCHOOL_SCHEMA
+            record_type = "School"
+        else: # Must be pos_cls
+            marker = CLASSROOM_MARKER
+            block_size = CLASSROOM_BLOCK_SIZE
+            schema = CLASSROOM_SCHEMA
+            record_type = "Classroom"
+
+        print(f"Found {record_type} record at offset {next_marker_pos}")
+
+        # The data we want to parse starts immediately AFTER the marker
+        record_start = next_marker_pos + MARKER_SIZE
+        block_bytes = data[record_start : record_start + block_size]
+
+        if record_type == "System":
+            system_record = parse_record(block_bytes, schema)
+            system_key_counter += 1
+            current_system_key = system_key_counter
+            system_record['key'] = current_system_key
+            systems_data.append(system_record)
+        
+        elif record_type == "School":
+            school_record = parse_record(block_bytes, schema)
+            if current_system_key is not None:
+                school_record['key'] = current_system_key
+                schools_data.append(school_record)
+            else:
+                print(f"⚠️ Warning: Found school record at {next_marker_pos} before any system record. Skipping.")
+        
+        elif record_type == "Classroom":
+            classroom_record = parse_record(block_bytes, schema)
+            if current_system_key is not None:
+                classroom_record['key'] = current_system_key
+                classrooms_data.append(classroom_record)
+            else:
+                print(f"⚠️ Warning: Found classroom record at {next_marker_pos} before any system record. Skipping.")
+        
+        # Move the search position to the end of the data block we just processed
+        pos = record_start + block_size
+
+    # --- Write Systems CSV ---
+    if systems_data:
+        system_fieldnames = ['key'] + [f[0] for f in SYSTEM_SCHEMA if f[2] != 'skip']
+        with open(out_systems_csv, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=system_fieldnames)
+            writer.writeheader()
+            writer.writerows(systems_data)
+        print(f"\n✅ Saved {len(systems_data)} systems to {out_systems_csv}")
+
+    # --- Write Schools CSV ---
+    if schools_data:
+        school_fieldnames = ['key'] + [f[0] for f in SCHOOL_SCHEMA if f[2] != 'skip']
+        with open(out_schools_csv, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=school_fieldnames)
+            writer.writeheader()
+            writer.writerows(schools_data)
+        print(f"✅ Saved {len(schools_data)} schools to {out_schools_csv}")
+
+    # --- Write Classrooms CSV ---
+    if classrooms_data:
+        classroom_fieldnames = ['key'] + [f[0] for f in CLASSROOM_SCHEMA if f[2] != 'skip']
+        with open(out_classrooms_csv, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=classroom_fieldnames)
+            writer.writeheader()
+            writer.writerows(classrooms_data)
+        print(f"✅ Saved {len(classrooms_data)} classrooms to {out_classrooms_csv}")
+
+
+# --- Run the parser ---
+# Replace with your actual file name
+process_file("RG441.ESS.CVRGY76")
